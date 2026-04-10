@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dasbor Prediksi Restoran Jabar</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        body { background-color: #fcf4f6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .card { border-radius: 15px; border: none; box-shadow: 0 4px 15px rgba(255, 133, 162, 0.1); margin-bottom: 20px; transition: transform 0.2s;}
+        .card:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(255, 133, 162, 0.2); }
+        .bg-pink-custom { background-color: #ff7597; color: white; border-radius: 15px 15px 0 0 !important; }
+        .text-pink { color: #d81b60; }
+        .icon-kpi { font-size: 2.5rem; color: #ffb3c6; opacity: 0.5; position: absolute; right: 20px; top: 20px; }
+        .btn-pink { background-color: #ff7597; color: white; border: none; border-radius: 10px; padding: 12px; font-weight: bold; }
+        .btn-pink:hover { background-color: #ff527b; color: white; }
+        .table-custom th { background-color: #ffe6ea; color: #d81b60; border-bottom: 2px solid #ffb3c6; }
+        .form-control, .form-select { border-radius: 10px; border: 1px solid #ffb3c6; }
+        .form-control:focus, .form-select:focus { border-color: #ff85a2; box-shadow: 0 0 0 0.25rem rgba(255, 133, 162, 0.25); }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-pink-custom mb-4" style="border-radius: 0;">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="#"><i class="bi bi-shop me-2"></i>Sistem Analisis & Prediksi Usaha Kuliner Jabar</a>
+        </div>
+    </nav>
+
+    <div class="container mb-5">
+        
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card bg-white p-3 position-relative">
+                    <h6 class="text-muted text-uppercase mb-1">Cakupan Wilayah</h6>
+                    <h2 class="fw-bold text-dark">{{ kpi_daerah }} <span class="fs-6 fw-normal text-muted">Daerah</span></h2>
+                    <i class="bi bi-map-fill icon-kpi"></i>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card bg-white p-3 position-relative">
+                    <h6 class="text-muted text-uppercase mb-1">Total Unit Usaha Tercatat</h6>
+                    <h2 class="fw-bold text-dark">{{ "{:,}".format(kpi_total).replace(',','.') }} <span class="fs-6 fw-normal text-muted">Unit</span></h2>
+                    <i class="bi bi-buildings-fill icon-kpi"></i>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card bg-white p-3 position-relative">
+                    <h6 class="text-muted text-uppercase mb-1">Rata-rata Usaha per Daerah</h6>
+                    <h2 class="fw-bold text-dark">{{ kpi_rata }} <span class="fs-6 fw-normal text-muted">Unit</span></h2>
+                    <i class="bi bi-bar-chart-fill icon-kpi"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-2">
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="fw-bold text-pink mb-4"><i class="bi bi-graph-up-arrow me-2"></i>Tren 15 Daerah Teratas</h5>
+                        <canvas id="lineChart" height="120"></canvas>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-body p-0">
+                        <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                            <table class="table table-hover table-custom mb-0 text-center">
+                                <thead class="sticky-top">
+                                    <tr>
+                                        <th>Peringkat</th>
+                                        <th class="text-start">Kabupaten / Kota</th>
+                                        <th>Total Usaha</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in data_tabel %}
+                                    <tr>
+                                        <td class="fw-bold text-muted">#{{ item.peringkat }}</td>
+                                        <td class="text-start">{{ item.kota }}</td>
+                                        <td class="fw-bold">{{ item.jumlah }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card shadow-sm" style="border: 2px solid #ffb3c6;">
+                    <div class="card-header bg-white text-center py-4 border-0">
+                        <div class="bg-pink-custom d-inline-block rounded-circle p-3 mb-3">
+                            <i class="bi bi-robot fs-1 text-white"></i>
+                        </div>
+                        <h5 class="fw-bold text-dark">Prediksi AI Masa Depan</h5>
+                        <p class="text-muted small">Menggunakan Artificial Neural Network</p>
+                    </div>
+                    <div class="card-body px-4 pb-4 pt-0">
+                        <form action="/predict" method="POST">
+                            <div class="mb-3">
+                                <label for="kota" class="form-label text-muted fw-bold small">Pilih Lokasi</label>
+                                <select class="form-select" id="kota" name="kota" required>
+                                    <option value="" disabled selected>-- Pilih Daerah --</option>
+                                    {% for city in cities %}
+                                    <option value="{{ city }}">{{ city }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="mb-4">
+                                <label for="tahun" class="form-label text-muted fw-bold small">Tahun Target Prediksi</label>
+                                <select class="form-select" id="tahun" name="tahun" required>
+                                    <option value="" disabled selected>-- Pilih Tahun --</option>
+                                    {% for year in years %}
+                                    <option value="{{ year }}">{{ year }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-pink w-100 shadow-sm">
+                                <i class="bi bi-lightning-charge-fill me-1"></i> Mulai Kalkulasi ANN
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const ctx = document.getElementById('lineChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: {{ labels | tojson }},
+                datasets: [{
+                    label: 'Jumlah Usaha',
+                    data: {{ values | tojson }},
+                    backgroundColor: 'rgba(255, 117, 151, 0.2)',
+                    borderColor: '#ff527b',
+                    borderWidth: 3,
+                    pointBackgroundColor: '#fff',
+                    pointBorderColor: '#ff527b',
+                    pointBorderWidth: 2,
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { 
+                        beginAtZero: true,
+                        grid: { color: '#f0f0f0' }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { maxRotation: 45, minRotation: 45 }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
